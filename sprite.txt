@@ -1,0 +1,73 @@
+<template>
+  <div id="app">
+    <p-application :width="1900" :height="1000" @ready="onAppReady">
+      <p-sprite
+        v-for="(s, index) in stars"
+        :key="`star-${index}`"
+        :texture="s.sprite.texture"
+        :x="s.sprite.x"
+        :y="s.sprite.y"
+        :scaleX="s.sprite.scaleX"
+        :scaleY="s.sprite.scaleY"
+        :anchorX="s.sprite.anchorX"
+        :anchorY="s.sprite.anchorY"
+        :width="1"
+        :height="1"
+      >
+      </p-sprite>
+    </p-application>
+  </div>
+</template>
+
+<script>
+import { PApplication, PSprite, PGraphics } from "vue-pixi-wrapper";
+import { Texture } from "pixi.js";
+
+import { fSegments } from "../constanst/formated-segments.js";
+
+export default {
+  components: {
+    PApplication,
+    PSprite,
+    PGraphics,
+  },
+  data() {
+    return {
+      backgroundColor: 0xfff000,
+      stars: [],
+      starTexture: Texture.from(
+        "https://pixijs.io/examples/examples/assets/star.png"
+      ),
+      app: {},
+    };
+  },
+  created() {
+    // Create the stars
+    for (let i = 0; i < fSegments.length; i++) {
+      const spriteItem = {
+        sprite: {
+          texture: this.starTexture,
+          x: fSegments[i].coordinates.x * 5,
+          y: fSegments[i].coordinates.y * 5,
+          scaleX: 0.03,
+          scaleY: 0.03,
+        },
+      };
+      // this.randomizeStar(star, true);
+      this.stars.push(spriteItem);
+    }
+  },
+  mounted() {
+    setInterval(() => {
+      this.warpSpeed = this.warpSpeed > 0 ? 0 : 1;
+    }, 5000);
+  },
+  methods: {
+    onAppReady(app) {
+      this.app = app;
+    },
+  },
+};
+</script>
+
+<style></style>

@@ -1,0 +1,115 @@
+<template>
+  <div></div>
+</template>
+
+<script>
+import * as PIXI from "pixi.js";
+import { arr } from "../constanst/segments";
+
+export default {
+  name: "IndexPage",
+  data: function () {
+    return {
+      segmentsPos: [],
+    };
+  },
+  mounted() {
+    this.drawPixi();
+    // console.log(arr);
+
+    // this.mapSegments();
+    // console.log(this.segmentsPos);
+  },
+
+  methods: {
+    drawPixi() {
+      const app = new PIXI.Application({ backgroundColor: 0x1099bb });
+      document.body.appendChild(app.view);
+
+      // Scale mode for all textures, will retain pixelation
+      PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+
+      const sprite = PIXI.Sprite.from(
+        "data:image/jpeg;base64,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"
+      );
+
+      // Set the initial position
+      sprite.anchor.set(0.5);
+      sprite.x = app.screen.width / 2;
+      sprite.y = app.screen.height / 2;
+
+      // Opt-in to interactivity
+      sprite.interactive = true;
+
+      // Shows hand cursor
+      sprite.buttonMode = true;
+
+      // Pointers normalize touch and mouse
+      sprite.on("pointerdown", onClick);
+
+      // Alternatively, use the mouse & touch events:
+      // sprite.on('click', onClick); // mouse-only
+      // sprite.on('tap', onClick); // touch-only
+
+      app.stage.addChild(sprite);
+
+      function onClick() {
+        sprite.scale.x *= 1.25;
+        sprite.scale.y *= 1.25;
+      }
+    },
+    mapSegments() {
+      this.segmentsPos = arr.map((s, index) => {
+        if (index < 20) {
+          return;
+        }
+        let letr = s.coordinates.match(/[a-zA-Z]+/g);
+        let YNum = s.coordinates.match(/\d+/g);
+        YNum = YNum.join("");
+
+        let symbolsMap = {
+          A: "0",
+          B: "1",
+          C: "2",
+          D: "3",
+          E: "4",
+          F: "5",
+          G: "6",
+          H: "7",
+          I: "8",
+          J: "9",
+          K: "10",
+          L: "11",
+          M: "12",
+          N: "13",
+          O: "14",
+          P: "15",
+          Q: "16",
+          R: "17",
+          S: "18",
+          T: "19",
+          U: "20",
+          V: "21",
+          W: "22",
+          X: "23",
+          Y: "24",
+          Z: "25",
+        };
+
+        let letrToNum = letr.map((l) => {
+          let numbers = l.replace(
+            /./gi,
+            ($0) => symbolsMap[$0.toUpperCase()] || $0
+          );
+          return +numbers;
+        });
+
+        let xPos = letrToNum.reduce((prev, cur) => prev + cur, 0);
+        s.coordinates = { x: xPos, y: +YNum };
+        return s;
+      });
+    },
+  },
+};
+</script>
+<style></style>

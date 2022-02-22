@@ -1,0 +1,98 @@
+<template>
+  <div class="connections">
+    <p-application id="pixi"></p-application>
+  </div>
+</template>
+
+<script>
+import { PApplication, PContainer, PSprite } from "vue-pixi-wrapper";
+import { BlurFilter } from "@pixi/filter-blur";
+import { Container } from "@pixi/display";
+import { Graphics } from "@pixi/graphics";
+import { Sprite } from "@pixi/sprite";
+
+import * as PIXI from "pixi.js";
+
+export default {
+  components: {
+    PApplication,
+    PContainer,
+    PSprite,
+  },
+  data() {
+    return {
+      rotation: 0,
+      viewContainer: {},
+    };
+  },
+  // methods: {
+  //   ticker(delta) {
+  //     this.rotation -= 0.01 * delta;
+  //   },
+  // },
+  methods: {
+    drawPixi() {
+      var canvas = document.getElementById("pixi");
+
+      const app = new PIXI.Application({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        antialias: true,
+        // transparent: true,
+        view: canvas,
+      });
+
+      let graphics = new PIXI.Graphics();
+      graphics.lineStyle(8, 0x000000);
+
+      //start
+      graphics.moveTo(300, 250);
+      //end
+      graphics.lineTo(500, 250);
+
+      app.stage.addChild(graphics);
+
+      let container = new Container();
+      let sprite = Sprite.from(
+        "https://s3-us-west-2.amazonaws.com/s.cdpn.io/693612/IaUrttj.png"
+      );
+
+      sprite.width = 512;
+      sprite.height = 512;
+
+      // Adds a sprite as a child to this container. As a result, the sprite will be rendered whenever the container
+      // is rendered.
+      container.addChild(sprite);
+
+      // Blurs whatever is rendered by the container
+      container.filters = [new BlurFilter()];
+
+      // Only the contents within a circle at the center should be rendered onto the screen.
+      container.mask = new Graphics()
+        .beginFill(0xffffff)
+        .drawCircle(
+          sprite.width / 2,
+          sprite.height / 2,
+          Math.min(sprite.width, sprite.height) / 2
+        );
+      app.stage.addChild(container);
+    },
+  },
+
+  mounted() {
+    this.drawPixi();
+  },
+  // created() {
+  // },
+};
+</script>
+
+<style>
+#app {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+</style>
