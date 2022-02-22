@@ -1,25 +1,45 @@
 <template>
-  <div id="app">
+  <div
+    id="app"
+    @wheel="onScroll"
+    @mousedown="pointerDown"
+    @mouseup="pointerUp"
+    @mousemove="pointerMove"
+  >
     <p-application
       :width="width"
       :height="height"
-      :backgroundColor="backgroundColor"
+      :backgroundColor="0x1099bb"
       :resolution="resolution"
       :skipHello="true"
+      @ready="onAppReady"
+      :interactive="true"
+      :buttonMode="true"
     >
       <p-container
         :hitArea="true"
-        :interactive="true"
-        :events="['pointerdown']"
-        @onpointerdown="pointerDown"
-        :buttonMode="true"
         :backgroundColor="backgroundColor"
         :x="mapX"
         :y="mapY"
+        :scaleX="scaleX"
+        :scaleY="scaleY"
       >
-        <p-sprite>
-          <p-graphics :scaleX="scaleX" :scaleY="scaleY" :draw="draw" />
-        </p-sprite>
+        <!-- <p-sprite
+          v-for="(s, index) in stars"
+          :key="`star-${index}`"
+          :texture="s.sprite.texture"
+          :x="s.sprite.x"
+          :y="s.sprite.y"
+          :scaleX="s.sprite.scaleX"
+          :scaleY="s.sprite.scaleY"
+          :anchorX="s.sprite.anchorX"
+          :anchorY="s.sprite.anchorY"
+          :width="1"
+          :height="1"
+        >
+        </p-sprite> -->
+
+        <p-graphics :draw="draw" :backgroundColor="backgroundColor" />
       </p-container>
     </p-application>
     <!-- <div v-for="fr in fSegmentsMap" :key="fr.id">
@@ -39,7 +59,9 @@ import {
   PGraphics,
   PContainer,
   PSprite,
+  PMesh,
 } from "vue-pixi-wrapper";
+import { Texture } from "pixi.js";
 import { Loader } from "pixi.js";
 
 export default {
@@ -50,6 +72,7 @@ export default {
     PContainer,
     PGraphics,
     PSprite,
+    PMesh,
   },
   data: function () {
     return {
@@ -62,27 +85,107 @@ export default {
       resolution: 1,
       mapX: 0,
       mapY: 0,
+      dragging: false,
+      shouldRenderContainer: false,
+      background: {
+        texture: {},
+        width: 0,
+        height: 0,
+      },
+      zoomStep: 0.1,
+      clientPos: {
+        x: null,
+        y: null,
+      },
+      stars: [],
+      starTexture: Texture.from(
+        "https://pixijs.io/examples/examples/assets/star.png"
+      ),
+      app: {},
     };
   },
   created() {
-    // this.mapSegments();
-    // this.fSegmentsMap = fSegments;
-    // console.log(fSegments);
-    console.log(JSON.stringify(this.segmentsPos));
-    const loader = new Loader();
-    loader.load(this.onAssetsLoaded);
+    // Create the sprites
+    for (let i = 0; i < fSegments.length; i++) {
+      const spriteItem = {
+        sprite: {
+          texture: this.starTexture,
+          x: fSegments[i].coordinates.x * 5,
+          y: fSegments[i].coordinates.y * 5,
+          scaleX: 0.05,
+          scaleY: 0.05,
+        },
+      };
+      // this.randomizeStar(star, true);
+      this.stars.push(spriteItem);
+    }
   },
-
   methods: {
-    pointerDown(event) {
-      this.scaleX += 0.1;
-      this.scaleY += 0.1;
+    onScroll(event) {
+      if (event.deltaY < 0) {
+        this.scaleX += this.zoomStep;
+        this.scaleY += this.zoomStep;
+        return;
+      }
+      this.scaleX -= this.zoomStep;
+      this.scaleY -= this.zoomStep;
+    },
+    onAssetsLoaded(loader, resources) {
+      this.background.texture = resources.t1.texture;
+      // this.background.width = this.screen.width;
+      // this.background.height = this.screen.height;
 
-      // this.mapX += 100;
-      // this.mapY += 100;
-      console.log(event);
+      // this.imageToReveal.texture = resources.t2.texture;
+      // this.imageToReveal.width = this.screen.width;
+      // this.imageToReveal.height = this.screen.height;
+
+      // const renderTexture = RenderTexture.create({
+      //   width: this.screen.width,
+      //   height: this.screen.height,
+      // });
+      // this.renderTextureSprite.texture = renderTexture;
+
+      // this.shouldRenderContainer = true;
     },
 
+    onAppReady() {
+      console.log("rdy");
+      const loader = new Loader();
+      // loader.load(this.onAssetsLoaded);
+
+      // this.app = app;
+      loader
+        .add("t1", "https://pixijs.io/examples/examples/assets/bg_grass.jpg")
+        .add("t2", "https://pixijs.io/examples/examples/assets/bg_rotate.jpg")
+        .load(this.onAssetsLoaded);
+
+      this.shouldRenderContainer = true;
+      this.segments = fSegments;
+      console.log(this.segments);
+    },
+
+    pointerDown(event) {
+      this.dragging = true;
+      // this.mapX = event.data.global.x - innerWidth / 2;
+      // this.mapY = event.data.global.y - innerHeight / 2;
+      // this.mapX += 100;
+      // this.mapY += 100;
+      // this.mapX = event.data.global.x - event.data.global.x/2;
+      this.clientPos.x = event.clientX;
+      this.clientPos.y = event.clientY;
+    },
+    pointerUp(event) {
+      console.log("up");
+      this.dragging = false;
+    },
+    pointerMove(event) {
+      if (this.dragging) {
+        // console.log(event);
+        this.mapX = event.clientX - this.clientPos.x;
+        this.mapY = event.clientY - this.clientPos.y;
+        // this.brush.position.copyFrom(event.data.global);
+      }
+    },
     draw(g) {
       g.clear();
 
