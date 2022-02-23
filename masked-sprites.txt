@@ -1,0 +1,105 @@
+<template>
+  <div class="connections">
+    <canvas id="pixi"></canvas>
+  </div>
+</template>
+
+<script>
+import { BlurFilter } from "@pixi/filter-blur";
+import { Container } from "@pixi/display";
+import { Graphics } from "@pixi/graphics";
+import { Sprite } from "@pixi/sprite";
+
+import { fSegments } from "../constanst/formated-segments.js";
+
+import * as PIXI from "pixi.js";
+
+export default {
+  data() {
+    return {
+      rotation: 0,
+      viewContainer: {},
+    };
+  },
+  methods: {
+    drawPixi() {
+      let canvas = document.getElementById("pixi");
+      console.log(fSegments[2].coordinates);
+
+      const app = new PIXI.Application({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        antialias: true,
+        // transparent: true,
+        view: canvas,
+      });
+
+      console.log(app.stage);
+
+      const cordFactor = 5;
+      const halfCordFactor = cordFactor / 2;
+
+      let mapContainer = new Container();
+
+      let baseX = 0;
+      let baseY = 0;
+
+      for (let i = 0; i < fSegments.length; i++) {
+        let x = fSegments[i].coordinates.x * cordFactor + baseX;
+        let y = fSegments[i].coordinates.y * cordFactor + baseY;
+        let sprite = Sprite.from(
+          "https://s3-us-west-2.amazonaws.com/s.cdpn.io/693612/IaUrttj.png"
+        );
+
+        sprite.width = 20;
+        sprite.height = 20;
+        let container = new Container();
+        // Adds a sprite as a child to this container. As a result, the sprite will be rendered whenever the container
+        // is rendered.
+        container.addChild(sprite);
+
+        container.x = x;
+        container.y = y;
+
+        // Blurs whatever is rendered by the container
+        // container.filters = [new BlurFilter()];
+
+        // Only the contents within a circle at the center should be rendered onto the screen.
+        container.mask = new Graphics()
+          .beginFill(0x000fff)
+          .drawCircle(
+            sprite.width / 2 + x,
+            sprite.height / 2 + y,
+            halfCordFactor
+          );
+
+        mapContainer.addChild(container);
+      }
+      app.ticker.add((delta) => {
+        // rotate the container!
+        // use delta to create frame-independent transform
+        baseX -= 0.01;
+      });
+
+      app.stage.addChild(mapContainer);
+      console.log(app.stage);
+    },
+  },
+
+  mounted() {
+    this.drawPixi();
+  },
+  // created() {
+  // },
+};
+</script>
+
+<style>
+#app {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+</style>

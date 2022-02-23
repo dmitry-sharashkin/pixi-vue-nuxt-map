@@ -1,292 +1,175 @@
 <template>
   <div
     id="app"
+    ref="app"
     @wheel="onScroll"
     @mousedown="pointerDown"
     @mouseup="pointerUp"
     @mousemove="pointerMove"
+    class="connections"
   >
-    <p-application
-      :width="width"
-      :height="height"
-      :backgroundColor="0x1099bb"
-      :resolution="resolution"
-      :skipHello="true"
-      @ready="onAppReady"
-      :interactive="true"
-      :buttonMode="true"
-    >
-      <p-container
-        :hitArea="true"
-        :backgroundColor="backgroundColor"
-        :x="mapX"
-        :y="mapY"
-        :scaleX="scaleX"
-        :scaleY="scaleY"
-      >
-        <!-- <p-sprite
-          v-for="(s, index) in stars"
-          :key="`star-${index}`"
-          :texture="s.sprite.texture"
-          :x="s.sprite.x"
-          :y="s.sprite.y"
-          :scaleX="s.sprite.scaleX"
-          :scaleY="s.sprite.scaleY"
-          :anchorX="s.sprite.anchorX"
-          :anchorY="s.sprite.anchorY"
-          :width="1"
-          :height="1"
-        >
-        </p-sprite> -->
-
-        <p-graphics :draw="draw" :backgroundColor="backgroundColor" />
-      </p-container>
-    </p-application>
-    <!-- <div v-for="fr in fSegmentsMap" :key="fr.id">
-      {{ `${fr.coordinates.x}  ${fr.coordinates.y}` }}
-    </div> -->
+    <canvas id="pixi"></canvas>
   </div>
 </template>
 
 <script>
-import { arr } from "../constanst/segments";
-import { fSegments } from "../constanst/formated-segments.js";
-import { fCities } from "../constanst/formated-cities.js";
+import { BlurFilter } from "@pixi/filter-blur";
+import { Container } from "@pixi/display";
+import { Graphics } from "@pixi/graphics";
+import { Sprite } from "@pixi/sprite";
 
-import {
-  PApplication,
-  PText,
-  PGraphics,
-  PContainer,
-  PSprite,
-  PMesh,
-} from "vue-pixi-wrapper";
-import { Texture } from "pixi.js";
-import { Loader } from "pixi.js";
+import _ from "lodash";
+
+import { fSegments } from "../constanst/formated-segments.js";
+
+import * as PIXI from "pixi.js";
 
 export default {
-  name: "IndexPage",
-  components: {
-    PApplication,
-    PText,
-    PContainer,
-    PGraphics,
-    PSprite,
-    PMesh,
-  },
-  data: function () {
+  data() {
     return {
-      segmentsPos: [],
-      width: innerWidth,
-      height: innerHeight,
+      rotation: 0,
+      viewContainer: {},
       scaleX: 1,
       scaleY: 1,
-      backgroundColor: 0x000000,
-      resolution: 1,
       mapX: 0,
       mapY: 0,
-      dragging: false,
-      shouldRenderContainer: false,
-      background: {
-        texture: {},
-        width: 0,
-        height: 0,
-      },
       zoomStep: 0.1,
       clientPos: {
         x: null,
         y: null,
       },
-      stars: [],
-      starTexture: Texture.from(
-        "https://pixijs.io/examples/examples/assets/star.png"
-      ),
-      app: {},
+      app: null,
     };
   },
-  created() {
-    // Create the sprites
-    for (let i = 0; i < fSegments.length; i++) {
-      const spriteItem = {
-        sprite: {
-          texture: this.starTexture,
-          x: fSegments[i].coordinates.x * 5,
-          y: fSegments[i].coordinates.y * 5,
-          scaleX: 0.05,
-          scaleY: 0.05,
-        },
-      };
-      // this.randomizeStar(star, true);
-      this.stars.push(spriteItem);
-    }
+
+  mounted() {
+    this.app = document.getElementById("app");
+
+    this.drawPixi();
   },
+
   methods: {
     onScroll(event) {
       if (event.deltaY < 0) {
         this.scaleX += this.zoomStep;
         this.scaleY += this.zoomStep;
+        console.log(this.scaleX);
+        console.log(this.scaleY);
         return;
       }
       this.scaleX -= this.zoomStep;
       this.scaleY -= this.zoomStep;
-    },
-    onAssetsLoaded(loader, resources) {
-      this.background.texture = resources.t1.texture;
-      // this.background.width = this.screen.width;
-      // this.background.height = this.screen.height;
-
-      // this.imageToReveal.texture = resources.t2.texture;
-      // this.imageToReveal.width = this.screen.width;
-      // this.imageToReveal.height = this.screen.height;
-
-      // const renderTexture = RenderTexture.create({
-      //   width: this.screen.width,
-      //   height: this.screen.height,
-      // });
-      // this.renderTextureSprite.texture = renderTexture;
-
-      // this.shouldRenderContainer = true;
-    },
-
-    onAppReady() {
-      console.log("rdy");
-      const loader = new Loader();
-      // loader.load(this.onAssetsLoaded);
-
-      // this.app = app;
-      loader
-        .add("t1", "https://pixijs.io/examples/examples/assets/bg_grass.jpg")
-        .add("t2", "https://pixijs.io/examples/examples/assets/bg_rotate.jpg")
-        .load(this.onAssetsLoaded);
-
-      this.shouldRenderContainer = true;
-      this.segments = fSegments;
-      console.log(this.segments);
+      console.log(this.scaleX);
+      console.log(this.scaleY);
     },
 
     pointerDown(event) {
-      this.dragging = true;
-      // this.mapX = event.data.global.x - innerWidth / 2;
-      // this.mapY = event.data.global.y - innerHeight / 2;
-      // this.mapX += 100;
-      // this.mapY += 100;
-      // this.mapX = event.data.global.x - event.data.global.x/2;
       this.clientPos.x = event.clientX;
       this.clientPos.y = event.clientY;
+
+      this.dragging = true;
     },
     pointerUp(event) {
-      console.log("up");
       this.dragging = false;
     },
+
+    throttleMove: _.throttle(function (event) {
+      this.pointerMove(event);
+    }, 10),
     pointerMove(event) {
       if (this.dragging) {
-        // console.log(event);
         this.mapX = event.clientX - this.clientPos.x;
         this.mapY = event.clientY - this.clientPos.y;
-        // this.brush.position.copyFrom(event.data.global);
-      }
-    },
-    draw(g) {
-      g.clear();
 
-      for (let i = 0; i <= fSegments.length; i++) {
-        const ar = fSegments[i];
-        // console.log(ar?.coordinates);
-        g.lineStyle(0);
-
-        g.beginFill(0xfff000);
-        g.drawCircle(ar?.coordinates.x * 5, ar?.coordinates.y * 5, 2);
-        g.endFill();
-        g.on("pointerdown", (event) => {
-          console.log("clicked!");
-        });
-      }
-
-      for (let i = 0; i <= fCities.length; i++) {
-        const ar = fCities[i];
-        // console.log(ar?.coordinates);
-        g.lineStyle(0);
-        g.beginFill(0xfffff0);
-        g.drawCircle(
-          // this.fSegmentsMap[i].coordinates.x,
-          // this.fSegmentsMap[i].coordinates.y,
-
-          ar?.coordinates.x * 5,
-          ar?.coordinates.y * 5,
-          5
-        );
-        g.endFill();
+        // this.app.style.top = this.mapY + "px";
+        // this.app.style.left = this.mapX + "px";
       }
     },
 
-    mapSegments() {
-      let symbolsMap = {
-        A: 1,
-        B: 2,
-        C: 3,
-        D: 4,
-        E: 5,
-        F: 6,
-        G: 7,
-        H: 8,
-        I: 9,
-        J: 10,
-        K: 11,
-        L: 12,
-        M: 13,
-        N: 14,
-        O: 15,
-        P: 16,
-        Q: 17,
-        R: 18,
-        S: 19,
-        T: 20,
-        U: 21,
-        V: 22,
-        W: 23,
-        X: 24,
-        Y: 25,
-        Z: 26,
-      };
-      this.segmentsPos = arr.map((s, index) => {
-        if (index < 20) {
-          return;
-        }
-        let yPos;
-        let letr = s.coordinates.match(/[a-zA-Z]+/g);
-        let num = s.coordinates.match(/\d+/g);
-        num = num.join("");
-        console.log(letr);
-        let letrToNum = letr[0].split("");
+    drawPixi() {
+      let canvas = document.getElementById("pixi");
 
-        // let letrToNum = letr.map((l) => {
-        //   let txt = l.split("");
-        //   txt = txt.map((item) => {
-        //     return +item.replace(
-        //       /./gi,
-        //       ($0) => symbolsMap[$0.toUpperCase()] || $0
-        //     );
-        //   });
-
-        //   return txt;
-        // });
-        if (letrToNum.length === 2) {
-          yPos = symbolsMap[letrToNum[0]] * 26 + symbolsMap[letrToNum[1]];
-        } else {
-          yPos = symbolsMap[letrToNum[0]];
-        }
-
-        console.log(yPos);
-
-        s.coordinates = { y: yPos, x: +num };
-        return s;
+      const app = new PIXI.Application({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        antialias: true,
+        // transparent: true,
+        view: canvas,
       });
+
+      const baseTexture = PIXI.Texture.from(
+        "https://s3-us-west-2.amazonaws.com/s.cdpn.io/693612/IaUrttj.png"
+      );
+
+      const cordFactor = 5;
+      const halfCordFactor = cordFactor / 2;
+
+      let mapContainer = new Container();
+
+      let baseX = 0;
+      let baseY = 0;
+
+      fSegments.forEach(function (item) {
+        let x = item.coordinates.x * cordFactor + baseX;
+        let y = item.coordinates.y * cordFactor + baseY;
+        let sprite = new PIXI.Sprite(baseTexture);
+
+        sprite.width = 5;
+        sprite.height = 5;
+        let container = new Container();
+        // Adds a sprite as a child to this container. As a result, the sprite will be rendered whenever the container
+        // is rendered.
+        container.addChild(sprite);
+        container.x = x;
+        container.y = y;
+        // Blurs whatever is rendered by the container
+        // container.filters = [new BlurFilter()];
+        // Only the contents within a circle at the center should be rendered onto the screen.
+
+        // container.mask = new Graphics()
+        //   .beginFill(0x000fff)
+        //   .drawCircle(
+        //     sprite.width / 2 + x,
+        //     sprite.height / 2 + y,
+        //     halfCordFactor
+        //   );
+        mapContainer.addChild(container);
+      });
+      app.ticker.add((delta) => {
+        // rotate the container!
+        // use delta to create frame-independent transform
+        mapContainer.scale.x = this.scaleX;
+        mapContainer.scale.y = this.scaleY;
+        if (this.dragging) {
+          mapContainer.x = this.mapX;
+          mapContainer.y = this.mapY;
+        }
+      });
+
+      const brt = new PIXI.BaseRenderTexture(
+        300,
+        300,
+        PIXI.SCALE_MODES.LINEAR,
+        1
+      );
+      const rt = new PIXI.RenderTexture(brt);
+
+      const spr = new PIXI.Sprite(rt);
+
+      app.stage.addChild(spr);
+      console.log(mapContainer);
+      app.stage.addChild(mapContainer);
     },
   },
 };
 </script>
+
 <style>
 body {
   margin: 0;
+  padding: 0;
+  position: relative;
+}
+#app {
 }
 </style>
