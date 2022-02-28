@@ -24,18 +24,21 @@ export default {
   plugins: [{ src: "./plugins/pixijs.js", mode: "client", ssr: false }],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
-  components: false,
+  components: true,
 
   // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
   buildModules: [],
 
   // Modules: https://go.nuxtjs.dev/config-modules
-  modules: [],
+  modules: ["@nuxtjs/axios"],
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
     babel: {
       plugins: ["@babel/plugin-proposal-optional-chaining"],
     },
+  },
+  axios: {
+    // proxy: true
   },
 };
